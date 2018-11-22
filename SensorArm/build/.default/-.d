@@ -1,0 +1,2 @@
+.sc8765395215581003408.o: \
+ /Users/Nick/Desktop/MQP/ECE/SensorArm/.sc8765395215581003408.cpp
