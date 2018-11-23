@@ -8,15 +8,6 @@
 #include "MetalDetector.h"
 #include <Arduino.h>
 #include <Wire.h>
-uint8_t intPin;
-uint8_t outPin;
-uint8_t threshPin;
-bool MetalDetected;
-uint8_t ZeroValue; //Potentiometer is 7 bit resolution
-volatile uint8_t PulseCount;
-unsigned long lastDetection;
-unsigned long startTime;
-bool newDetection;
 #define ZeroTimeNeeded 5000000//need to not detect metal for 5 seconds to be zeroed
 #define ZeroTimeout 30000000//stop trying to zero metal detector after 30 seconds
 #define pulsesForDetection 5//# of pulses needed in the set period to be counted as metal detected

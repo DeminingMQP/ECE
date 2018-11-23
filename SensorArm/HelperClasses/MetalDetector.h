@@ -2,7 +2,7 @@
  * MetalDetector.h
  *
  *  Created on: Nov 22, 2018
- *      Author: Nick
+ *      Author: Nicholas Lanotte
  */
 
 #ifndef METALDETECTOR_H_
@@ -21,8 +21,11 @@ private:
 	uint8_t outPin;
 	uint8_t threshPin;
 	bool MetalDetected;
-	uint16_t ZeroValue;
-	unsigned long lastDetection = 0;
+	uint8_t ZeroValue; //Potentiometer is 7 bit resolution
+	volatile uint8_t PulseCount;
+	unsigned long lastDetection;
+	unsigned long startTime;
+	bool newDetection;
 	static void MetalDetectorISR(void);
 };
 
