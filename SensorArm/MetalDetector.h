@@ -14,6 +14,7 @@ public:
 	MetalDetector(uint8_t interruptPin, uint8_t outputPin, uint8_t thresholdPin);
 		virtual ~MetalDetector();
 		bool ZeroMetalDetector();
+		void CheckDetection(void);
 private:
 	static void MetalDetectorISR(void);
 	uint8_t intPin;
@@ -22,9 +23,9 @@ private:
 	bool MetalDetected;
 	uint16_t ZeroValue;
 	unsigned long lastDetection = 0;
-
-
+	static void MetalDetectorISR(void);
 };
-static void MetalDetector::MetalDetectorISR(void);
+
+
 
 #endif /* METALDETECTOR_H_ */
