@@ -8,6 +8,7 @@
 #include "Libraries/NewPing.h"
 #ifndef METALDETECTORORIENTATION_H_
 #define METALDETECTORORIENTATION_H_
+#define NumDataPoints 3
 
 //USFL -> Ultrasonic Sensor Front Left
 //USFR -> Ultrasonic Sensor Front Right
@@ -24,12 +25,25 @@ public:
 	virtual ~MetalDetectorOrientation();
 
 private:
+	bool InitOrientation();
 	void MeasureOrientation(void);
+	int GetNeededAngle(int rawDist);
+
 	NewPing FrontLeftUS;
 	NewPing FrontRightUS;
 	NewPing BackLeftUS;
 	NewPing BackRightUS;
 	NewPing REARUS;
+	int FLData[NumDataPoints];
+	int FRData[NumDataPoints];
+	int BLData[NumDataPoints];
+	int BRData[NumDataPoints];
+	int REARData[NumDataPoints];
+	uint8_t CurPosData;
+	uint8_t RaisePN;
+	uint8_t LowerPN;
 };
+
+
 
 #endif /* METALDETECTORORIENTATION_H_ */
