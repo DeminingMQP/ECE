@@ -16,13 +16,12 @@ public:
 		bool ZeroMetalDetector();
 		void CheckDetection(void);
 private:
-	static void MetalDetectorISR(void);
 	uint8_t intPin;
 	uint8_t outPin;
 	uint8_t threshPin;
 	bool MetalDetected;
 	uint8_t ZeroValue; //Potentiometer is 7 bit resolution
-	volatile uint8_t PulseCount;
+	static volatile uint8_t PulseCount;
 	unsigned long lastDetection;
 	unsigned long startTime;
 	bool newDetection;

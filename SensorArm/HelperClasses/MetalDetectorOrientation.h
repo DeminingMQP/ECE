@@ -29,11 +29,7 @@ private:
 	void MeasureOrientation(void);
 	int GetNeededAngle(int rawDist);
 
-	NewPing FrontLeftUS;
-	NewPing FrontRightUS;
-	NewPing BackLeftUS;
-	NewPing BackRightUS;
-	NewPing REARUS;
+
 	int FLData[NumDataPoints];
 	int FRData[NumDataPoints];
 	int BLData[NumDataPoints];
