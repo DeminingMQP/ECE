@@ -10,6 +10,6 @@ analogWrite(6, 255);
 
 void loop() {
 delay(1000);
-//Serial.println("Change Direction");
+Serial.println("Testing");
 
 }
