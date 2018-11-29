@@ -2,13 +2,30 @@
  * Motors.cpp
  *
  *  Created on: Nov 21, 2018
- *      Author: Nick
+ *      Author: Nicholas Lanotte
  */
 
 #include "Motors.h"
 
-Motors::Motors(uint8_t YawMPWM, uint8_t YawMD, uint8_t YawMEN, uint8_t RollMPWM, uint8_t RollMD, uint8_t RollMEN,uint8_t RotMPWM, uint8_t RotMD, uint8_t RotMEN, uint8_t ServoPin,
-		uint8_t YawButL,uint8_t YawButR, uint8_t RollButL,uint8_t RollButR, uint8_t RotButCoilOut,uint8_t RotButMarkingOut){
+Motors::Motors(uint8_t YawMPWM,
+		uint8_t YawMD,
+		uint8_t YawMEN,
+		uint8_t RollMPWM,
+		uint8_t RollMD,
+		uint8_t RollMEN,
+		uint8_t RotMPWM,
+		uint8_t RotMD,
+		uint8_t RotMEN,
+		uint8_t ServoPin,
+		uint8_t YawButL,
+		uint8_t YawButR,
+		uint8_t RollButL,
+		uint8_t RollButR,
+		uint8_t RotButCoilOut,
+		uint8_t RotButMarkingOut,
+		uint8_t YawCS,
+		uint8_t RollCS,
+		uint8_t RotCS){
 
 	    lYawMPWM = YawMPWM;
 		lYawMD = YawMD;
@@ -26,6 +43,9 @@ Motors::Motors(uint8_t YawMPWM, uint8_t YawMD, uint8_t YawMEN, uint8_t RollMPWM,
 		lRollButR = RollButR;
 		lRotButCoilOut = RotButCoilOut;
 		lRotButMarkingOut = RotButMarkingOut;
+		YawCSPin = YawCS;
+		RollCSPin = RollCS;
+		RotCSPin = RotCS;
 
 
 		pinMode(lYawMPWM, OUTPUT);
@@ -50,11 +70,11 @@ Motors::Motors(uint8_t YawMPWM, uint8_t YawMD, uint8_t YawMEN, uint8_t RollMPWM,
 
 		attachInterrupt(digitalPinToInterrupt(YawMEN), YawMotorISR, FALLING);//Need to check edge. Probably doesnt matter
 		attachInterrupt(digitalPinToInterrupt(RollMEN), RollMotorISR, FALLING);//Need to check edge
-		YawDirection = 0;
-		RollDirection = 0;
+		YawDirection = 0;//0 clockwise, 1 counterclockwise. Need to test.
+		RollDirection = 0;//0 clockwise, 1 counterclockwise. Need to test.
 
-		YawEncVal = 0;
-		RollEncVal = 0;
+		YawEncVal = 0;//Current Position of Yaw
+		RollEncVal = 0;//Current Position of Roll
 
 }
 
@@ -63,6 +83,7 @@ Motors::~Motors() {
 }
 
 bool Motors::AtRotationLimit(){
+	//If any of the limit switches are pressed it is at an extreme and returns true
 	if(digitalRead(lYawButL)||digitalRead(lYawButR)||digitalRead(lRollButL)||digitalRead(lRollButR)){
 		return true;
 	}
@@ -73,79 +94,81 @@ bool Motors::AtRotationLimit(){
 
 //6750 Encoder Ticks per 1 rev of arm. Only going to move maximum
 void Motors::setMotorPos(int Yaw, int Roll){
-	if(Yaw>0){
-		YawDirection = 1;
-		uint16_t tYawEncValMove = Yaw*EncTicksPerDegree;
+	if(Yaw>0){//if positive rotation...
+		YawDirection = 1;//set direction - counter clockwise
+		uint16_t tYawEncValMove = Yaw*EncTicksPerDegree;//calc enc ticks to move
 		if(tYawEncValMove>MaxMotorMove){//limit to 13 degree angle change. Shouldnt move this far before being reset again
 			YawEncValMove = MaxMotorMove;
 		}
 		else{
 			YawEncValMove = tYawEncValMove;
 		}
+		//actually tell the motor to move at the end
 		digitalWrite(lYawMD, 1);// need to check that this is correct
 		analogWrite(lYawMPWM, 64);// need to test speed
 	}
-	else if (Yaw<0){
-		YawDirection = 0;
-		uint16_t tYawEncValMove = Yaw*-1*EncTicksPerDegree;
+	else if (Yaw<0){// if the move value is negative
+		YawDirection = 0;//set direction -  counterclockwise
+		uint16_t tYawEncValMove = Yaw*-1*EncTicksPerDegree;//calc encoder ticks to new pos
 		if(tYawEncValMove>MaxMotorMove){//limit to 13 degree angle change. Shouldnt move this far before being reset again. Also enables atomic write
 			YawEncValMove = MaxMotorMove;
 		}
 		else{
 			YawEncValMove = tYawEncValMove;
 		}
+		//actually tell the motor to move at the end
 		digitalWrite(lYawMD, 0);
 		analogWrite(lYawMPWM, 64);
 	}
 	//else dont set Yaw
-	if(Roll>0){
-		RollDirection = 1;
-		uint16_t tRollEncValMove = Roll*EncTicksPerDegree;
+	if(Roll>0){//if positive rotation...
+		RollDirection = 1;//set direction - counter clockwise
+		uint16_t tRollEncValMove = Roll*EncTicksPerDegree;//calc enc ticks to move
 		if(tRollEncValMove>MaxMotorMove){//limit to 13 degree angle change. Shouldnt move this far before being reset again
 			RollEncValMove = MaxMotorMove;
 		}
 		else{
 			RollEncValMove = tRollEncValMove;
 		}
+		//actually tell the motor to move at the end
 		digitalWrite(lRollMD, 1);// need to check that this is correct
 		analogWrite(lRollMPWM, 64);// need to test speed
 	}
-	else if (Roll<0){
-		RollDirection = 0;
-		uint16_t tRollEncValMove = Roll*-1*EncTicksPerDegree;
+	else if (Roll<0){// if the move value is negative
+		RollDirection = 0;//set direction - clockwise
+		uint16_t tRollEncValMove = Roll*-1*EncTicksPerDegree;//calc enc ticks to move
 		if(tRollEncValMove>MaxMotorMove){//limit to 13 degree angle change. Shouldnt move this far before being reset again. Also enables atomic write
 			RollEncValMove = MaxMotorMove;
 		}
+		//actually tell the motor to move at the end
 		digitalWrite(lRollMD, 0);
 		analogWrite(lRollMPWM, 64);
 	}
 	//else dont set Roll
-
-
 }
 void Motors::YawMotorISR(void){
 	if(YawDirection){//rotating up front side
-		if(digitalRead(lYawButL)){
-			analogWrite(lYawMPWM, 0);
-			YawEncValMove++;
-			YawEncVal++;
+		if(digitalRead(lYawButL)){//check to see if arm is at 30 degrees
+			analogWrite(lYawMPWM, 0);//if so stop motor (prevent stalling)
+			YawEncValMove=0;//can't move anymore
+			YawEncVal=0;//at home position
 		}
 		else{
-			YawEncValMove--;
-			YawEncVal++;
+			YawEncValMove--;//otherwise subtract 1 from ticks left to move
+			YawEncVal--;//subtract 1 from position
 		}
 	}
 	else{
-		if(digitalRead(lYawButR)){
-			analogWrite(lYawMPWM, 0);
-			YawEncValMove = 0;
-			YawEncVal--;
+		if(digitalRead(lYawButR)){//check if the arm is at -30 degrees
+			analogWrite(lYawMPWM, 0);//if so stop motor
+			YawEncValMove = 0; //stop moving
 		}
 		else{
-			YawEncValMove--;
-			YawEncVal --;
+			YawEncValMove--;//otherwise subtract 1 from ticks left to move
 		}
+		YawEncVal++;//add 1 to position
 	}
+	//if no more ticks left to move stop motor
 	if(YawEncValMove==0){
 		analogWrite(lYawMPWM, 0);
 	}
@@ -154,29 +177,29 @@ void Motors::YawMotorISR(void){
 
 void Motors::RollMotorISR(void){
 	if(RollDirection){//rotating up left side
-		if(digitalRead(lRollButL)){
-			analogWrite(lRollMPWM, 0);
-			RollEncValMove++;
-			RollEncVal++;
+		if(digitalRead(lRollButL)){//if at 30 degrees
+			analogWrite(lRollMPWM, 0);//stop motor
+			RollEncValMove=0;//cant move anymore
+			RollEncVal=0;//at home position
 		}
 		else{
-			RollEncValMove--;
-			RollEncVal++;
+			RollEncValMove--;//otherwise subtract 1 from ticks left to move
+			RollEncVal--;//subtract 1 from position
 		}
 	}
 	else{
-		if(digitalRead(lRollButR)){
-			analogWrite(lRollMPWM, 0);
-			RollEncValMove = 0;
-			RollEncVal--;
+		if(digitalRead(lRollButR)){//if at -30 degrees
+			analogWrite(lRollMPWM, 0);//stop motor
+			RollEncValMove = 0; //No more ticks left to move
+			RollEncVal++;//add 1 to encoder position
 		}
 		else{
-			RollEncValMove--;
-			RollEncVal--;
+			RollEncValMove--;//otherwise 1 less tick to move
+			RollEncVal++;//Add one to position
 		}
 	}
-	if(RollEncVal==0){
-		analogWrite(lRollMPWM, 0);
+	if(RollEncVal==0){//if no more ticks left to move
+		analogWrite(lRollMPWM, 0);//stop motor
 	}
 
 }
@@ -188,5 +211,142 @@ int Motors::CurrentRoll(void){
 	return RollEncVal/19;
 }
 bool Motors::HomeAxis(void){
-	return true;//TODO
+	bool Homing = true;//used to break loop and determine success
+
+	//Set motors in motion
+	digitalWrite(lYawMD, 1);//need to check
+	analogWrite(lYawMPWM, 64);
+	digitalWrite(lRollMD, 1);
+	analogWrite(lRollMPWM, 64);
+
+	while(Homing){
+		//make sure sensors arent stalling
+		if(pollCurrentSensors){
+			break;//if at least 1 is break;
+		}
+		//read in buttons
+		bool YawBut = digitalRead(lYawButL);
+		bool RollBut = digitalRead(lRollButL);
+		if(YawBut){// if at home position
+			analogWrite(lYawMPWM, 0);//stop motor
+		}
+		if(RollBut){//if at home position
+			analogWrite(lRollMPWM, 0);//stop motor
+		}
+		if(RollBut&&YawBut){//if both are homed...
+			//Disabling interrupts should not do anything here because this
+			//will be done at start up when there is no metal and the motors have
+			//stopped moving.
+			noInterrupts();
+			//set EncVals to 0
+			YawEncVal = 0;
+			RollEncVal = 0;
+			interrupts();
+			Homing  = false;//break loop
+		}
+	}
+	if(Homing){//if Homing is true...
+		return false;//never successfully homed. Motor Stall Error
+	}
+	else{
+		return true;//successfully homed
+	}
+}
+//polls all 3 current sensors. If one is stalling, return true for failure
+bool Motors::pollCurrentSensors(void){
+	if(analogRead(RollCSPin)>MotorStallCurrent || analogRead(YawCSPin)>MotorStallCurrent||analogRead(RotCSPin)){
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+void Motors::SprayPaint(void){
+	analogWrite(lServoPin, ServoPaintSpraying);//Move servo to spraying position
+}
+void Motors::ReleasePaint(void){
+	analogWrite(lServoPin, ServoReleasePaint);//Move Servo to released position
+}
+bool Motors::MarkLandmine(void){
+	//rotate marking system out
+	if(!RotatePaint()){
+		return false;// error occurred
+	}
+	SprayPaint();//spray paint
+	setMotorPos(0, 2);//rotate can slightly to left
+	while(AreMotorsMoving()){
+	//wait for movement to finish
+	}
+	setMotorPos(0, -2);//move can over to the right
+		while(AreMotorsMoving()){
+			//wait for movement to finish
+	}
+	setMotorPos(0, -2);//move can over to the right
+		while(AreMotorsMoving()){
+		//wait for movement to finish
+		}
+	setMotorPos(0, 2);//move can back to starting position
+	while(AreMotorsMoving()){
+	//wait for movement to finish
+	}
+	ReleasePaint();//stop spraying
+	if(!RotateCoil()){//rotate coil back out
+		return false;// error occurred
+	}
+	else{
+		return true;//success
+	}
+}
+
+bool Motors::RotatePaint(void){
+	digitalWrite(lRotMD, 1);//set motor direction
+	analogWrite(lRotMPWM, 64);//start moving motor
+	bool Moving = true;//used to break loops and determine return value
+	while(Moving){
+		if(pollCurrentSensors()){//check for motor stall
+			analogWrite(lRotMPWM, 0);//if stalled stop motor.
+			break;
+		}
+		if(digitalRead(lRotButMarkingOut)){//check to see if at position
+			analogWrite(lRotMPWM, 0);//if so stop motor
+			Moving = false;//no longer moving
+		}
+	}
+	if(Moving){//if true it means motor stalled. Movement failed
+		return false;
+	}
+	else{
+		return true;
+	}
+}
+
+bool Motors::RotateCoil(void){
+	digitalWrite(lRotMD, 0);//set motor direction
+	analogWrite(lRotMPWM, 64);//start moving motor
+	bool Moving = true;//used to break loops and determine return value
+	while(Moving){
+		if(pollCurrentSensors()){//check for motor stall
+			analogWrite(lRotMPWM, 0);//if stalled stop motor.
+			break;
+		}
+		if(digitalRead(lRotButCoilOut)){//check to see if at position
+			analogWrite(lRotMPWM, 0);//if so stop motor
+			Moving = false;//no longer moving
+		}
+	}
+	if(Moving){//if true it means motor stalled. Movement failed
+		return false;
+	}
+	else{
+		return true;
+	}
+}
+
+bool Motors::AreMotorsMoving(){//if the Move values arent zero then the motors are moving
+	if((YawEncValMove==0)&&(RollEncValMove==0)){
+		return false;
+	}
+	else{
+		return true;
+	}
 }
