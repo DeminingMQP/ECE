@@ -19,6 +19,14 @@ NewPing FrontRightUS(0,0,0);
 NewPing BackLeftUS(0,0,0);
 NewPing BackRightUS(0,0,0);
 NewPing REARUS(0,0,0);
+MetalDetectorOrientation::MetalDetectorOrientation(){
+	NeededChangeInRoll = 0;
+	NeededChangeInYaw = 0;
+	InitOrientation();
+	CurPosData = 0;
+	RaisePN = 0;
+	LowerPN = 0;
+}
 MetalDetectorOrientation::MetalDetectorOrientation(uint8_t USFL, uint8_t USFR, uint8_t USBL, uint8_t USBR, uint8_t USREAR, uint8_t RaisePin, uint8_t LowerPin) {
 	//create ultrasonic objects
 	FrontLeftUS = NewPing(USFL, USFL, MaxUSRangeCM);

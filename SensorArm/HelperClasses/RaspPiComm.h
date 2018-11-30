@@ -9,18 +9,17 @@
 #define RASPPICOMM_H_
 #include <Arduino.h>
 
-#define Buffer_Size 10
+#define Buffer_Size 8
+
+void onRecieve(int numBytes);
 class RaspPiComm {
 public:
 	RaspPiComm();
 	virtual ~RaspPiComm();
+	char GetMessage(void);
+	void SendMessage(char Mssg);
 	void CommSetUp(void);
 
-private:
-	static volatile uint8_t MssgBuffer[Buffer_Size];
-	static volatile uint8_t BufIndex;
-	static volatile uint8_t NumMessages;
-	static void onRecieve(int numBytes);
 };
 
 #endif /* RASPPICOMM_H_ */

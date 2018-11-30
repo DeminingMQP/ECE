@@ -7,6 +7,42 @@
 
 #include "Motors.h"
 
+uint8_t lYawMPWM;
+uint8_t lRollMPWM;
+uint8_t lYawButL;
+uint8_t lYawButR;
+uint8_t lRollButL;
+uint8_t lRollButR;
+bool YawDirection;
+bool RollDirection;
+
+volatile uint16_t YawEncVal;
+volatile uint16_t RollEncVal;
+volatile uint8_t YawEncValMove;
+volatile uint8_t RollEncValMove;
+
+Motors::Motors(){
+	 lYawMPWM = 0;
+	lYawMD = 0;
+	lYawMEN = 0;
+	lRollMPWM = 0;
+	lRollMD = 0;
+	lRollMEN = 0;
+	lRotMPWM = 0;
+	lRotMD = 0;
+	lRotMEN = 0;
+	lServoPin = 0;
+	lYawButL = 0;
+	lYawButR = 0;
+	lRollButL = 0;
+	lRollButR = 0;
+	lRotButCoilOut = 0;
+	lRotButMarkingOut = 0;
+	YawCSPin = 0;
+	RollCSPin = 0;
+	RotCSPin = 0;
+};
+
 Motors::Motors(uint8_t YawMPWM,
 		uint8_t YawMD,
 		uint8_t YawMEN,
@@ -146,63 +182,6 @@ void Motors::setMotorPos(int Yaw, int Roll){
 	}
 	//else dont set Roll
 }
-void Motors::YawMotorISR(void){
-	if(YawDirection){//rotating up front side
-		if(digitalRead(lYawButL)){//check to see if arm is at 30 degrees
-			analogWrite(lYawMPWM, 0);//if so stop motor (prevent stalling)
-			YawEncValMove=0;//can't move anymore
-			YawEncVal=0;//at home position
-		}
-		else{
-			YawEncValMove--;//otherwise subtract 1 from ticks left to move
-			YawEncVal--;//subtract 1 from position
-		}
-	}
-	else{
-		if(digitalRead(lYawButR)){//check if the arm is at -30 degrees
-			analogWrite(lYawMPWM, 0);//if so stop motor
-			YawEncValMove = 0; //stop moving
-		}
-		else{
-			YawEncValMove--;//otherwise subtract 1 from ticks left to move
-		}
-		YawEncVal++;//add 1 to position
-	}
-	//if no more ticks left to move stop motor
-	if(YawEncValMove==0){
-		analogWrite(lYawMPWM, 0);
-	}
-}
-
-
-void Motors::RollMotorISR(void){
-	if(RollDirection){//rotating up left side
-		if(digitalRead(lRollButL)){//if at 30 degrees
-			analogWrite(lRollMPWM, 0);//stop motor
-			RollEncValMove=0;//cant move anymore
-			RollEncVal=0;//at home position
-		}
-		else{
-			RollEncValMove--;//otherwise subtract 1 from ticks left to move
-			RollEncVal--;//subtract 1 from position
-		}
-	}
-	else{
-		if(digitalRead(lRollButR)){//if at -30 degrees
-			analogWrite(lRollMPWM, 0);//stop motor
-			RollEncValMove = 0; //No more ticks left to move
-			RollEncVal++;//add 1 to encoder position
-		}
-		else{
-			RollEncValMove--;//otherwise 1 less tick to move
-			RollEncVal++;//Add one to position
-		}
-	}
-	if(RollEncVal==0){//if no more ticks left to move
-		analogWrite(lRollMPWM, 0);//stop motor
-	}
-
-}
 
 int Motors::CurrentYaw(void){
 	return YawEncVal/19;//if value ends up not being close enough then will make this a float since the true value is 18.5
@@ -221,7 +200,7 @@ bool Motors::HomeAxis(void){
 
 	while(Homing){
 		//make sure sensors arent stalling
-		if(pollCurrentSensors){
+		if(pollCurrentSensors()){
 			break;//if at least 1 is break;
 		}
 		//read in buttons
@@ -348,5 +327,62 @@ bool Motors::AreMotorsMoving(){//if the Move values arent zero then the motors a
 	}
 	else{
 		return true;
+	}
+}
+
+void RollMotorISR(void){
+	if(RollDirection){//rotating up left side
+		if(digitalRead(lRollButL)){//if at 30 degrees
+			analogWrite(lRollMPWM, 0);//stop motor
+			RollEncValMove=0;//cant move anymore
+			RollEncVal=0;//at home position
+		}
+		else{
+			RollEncValMove--;//otherwise subtract 1 from ticks left to move
+			RollEncVal--;//subtract 1 from position
+		}
+	}
+	else{
+		if(digitalRead(lRollButR)){//if at -30 degrees
+			analogWrite(lRollMPWM, 0);//stop motor
+			RollEncValMove = 0; //No more ticks left to move
+			RollEncVal++;//add 1 to encoder position
+		}
+		else{
+			RollEncValMove--;//otherwise 1 less tick to move
+			RollEncVal++;//Add one to position
+		}
+	}
+	if(RollEncVal==0){//if no more ticks left to move
+		analogWrite(lRollMPWM, 0);//stop motor
+	}
+
+}
+
+void YawMotorISR(void){
+	if(YawDirection){//rotating up front side
+		if(digitalRead(lYawButL)){//check to see if arm is at 30 degrees
+			analogWrite(lYawMPWM, 0);//if so stop motor (prevent stalling)
+			YawEncValMove=0;//can't move anymore
+			YawEncVal=0;//at home position
+		}
+		else{
+			YawEncValMove--;//otherwise subtract 1 from ticks left to move
+			YawEncVal--;//subtract 1 from position
+		}
+	}
+	else{
+		if(digitalRead(lYawButR)){//check if the arm is at -30 degrees
+			analogWrite(lYawMPWM, 0);//if so stop motor
+			YawEncValMove = 0; //stop moving
+		}
+		else{
+			YawEncValMove--;//otherwise subtract 1 from ticks left to move
+		}
+		YawEncVal++;//add 1 to position
+	}
+	//if no more ticks left to move stop motor
+	if(YawEncValMove==0){
+		analogWrite(lYawMPWM, 0);
 	}
 }

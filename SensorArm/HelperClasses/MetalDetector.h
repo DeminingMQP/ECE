@@ -8,24 +8,24 @@
 #ifndef METALDETECTOR_H_
 #define METALDETECTOR_H_
 #include <Arduino.h>
-
+void MetalDetectorISR(void);
 class MetalDetector {
 public:
+	MetalDetector();
 	MetalDetector(uint8_t interruptPin, uint8_t outputPin, uint8_t thresholdPin);
 		virtual ~MetalDetector();
-		bool ZeroMetalDetector();
-		void CheckDetection(void);
+	bool ZeroMetalDetector();
+	void CheckDetection(void);
 private:
 	uint8_t intPin;
 	uint8_t outPin;
 	uint8_t threshPin;
-	bool MetalDetected;
 	uint8_t ZeroValue; //Potentiometer is 7 bit resolution
-	static volatile uint8_t PulseCount;
 	unsigned long lastDetection;
 	unsigned long startTime;
 	bool newDetection;
-	static void MetalDetectorISR(void);
+	bool MetalDetected;
+
 };
 
 

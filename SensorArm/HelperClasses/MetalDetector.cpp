@@ -14,7 +14,20 @@
 #define timeForDetection 10000
 #define PotIICAddress 47
 
+volatile uint8_t PulseCount;
 
+MetalDetector::MetalDetector(){
+	intPin = 0;
+	outPin = 0;
+	threshPin = 0;
+	////////////////////initialize variables////////
+	MetalDetected = false;
+	lastDetection = 0;
+	ZeroValue = 0;
+	startTime = 0;
+	PulseCount = 0;
+	newDetection=true;
+}
 MetalDetector::MetalDetector(uint8_t interruptPin, uint8_t outputPin,
 		uint8_t thresholdPin) {
 	/////////////////////Set up Pins/////////
@@ -77,13 +90,7 @@ bool MetalDetector::ZeroMetalDetector() {
 	return isItZeroed;
 
 }
-static void MetalDetector::MetalDetectorISR(void) {
-	/*This is the ISR that work in response to the interrupt pin going low
-	 *AttachInt function handles removing ISR flag
-	 *This function simply increments a variable that is processed by CheckDetection
-	 */
-	PulseCount++;
-}
+
 void MetalDetector::CheckDetection(void){//Must be called from main loop of code very frequently!!!
 	uint8_t tempPulseCount = PulseCount;//If ISR interrupts again mid loop it wont care
 	if(newDetection){//if metal is detected or not detected in the previous loop the metal detector timer is basically reset
@@ -109,4 +116,11 @@ void MetalDetector::CheckDetection(void){//Must be called from main loop of code
 	}
 
 
+}
+void MetalDetectorISR(void) {
+	/*This is the ISR that work in response to the interrupt pin going low
+	 *AttachInt function handles removing ISR flag
+	 *This function simply increments a variable that is processed by CheckDetection
+	 */
+	PulseCount++;
 }
