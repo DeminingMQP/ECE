@@ -25,9 +25,8 @@ public:
 	MetalDetectorOrientation(uint8_t USFL, uint8_t USFR, uint8_t USBL, uint8_t USBR, uint8_t USREAR, uint8_t RaisePin, uint8_t LowerPin);
 	virtual ~MetalDetectorOrientation();
 	void MeasureOrientation(void);
-
-private:
 	bool InitOrientation();
+private:
 	int GetNeededAngle(int rawDist);
 
 

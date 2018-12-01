@@ -11,7 +11,7 @@
 #define ZeroTimeNeeded 5000000//need to not detect metal for 5 seconds to be zeroed
 #define ZeroTimeout 30000000//stop trying to zero metal detector after 30 seconds
 #define pulsesForDetection 5//# of pulses needed in the set period to be counted as metal detected
-#define timeForDetection 10000
+#define timeForDetection 20000
 #define PotIICAddress 47
 
 volatile uint8_t PulseCount;
@@ -74,7 +74,7 @@ bool MetalDetector::ZeroMetalDetector() {
 			isItZeroed = true;
 			break;
 		}
-		if (MetalDetected) {
+		if (MetalDetected && newDetection) {
 			//Send new resistance value to POT
 			if(ZeroValue>=127){
 				break;//cant be incremented more. Failed to Zero Metal Detector
@@ -88,7 +88,6 @@ bool MetalDetector::ZeroMetalDetector() {
 		}
 	}
 	return isItZeroed;
-
 }
 
 void MetalDetector::CheckDetection(void){//Must be called from main loop of code very frequently!!!

@@ -44,8 +44,6 @@
 
 #define NextGroundReading 200000 //In microseconds
 
-
-
 void ProcessRaspPiRequest(char Mssg);
 enum RobotStatusMessages {
 	RobotRunning, RobotStopped, RobotMotorStall

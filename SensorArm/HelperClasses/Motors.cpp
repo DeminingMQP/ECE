@@ -257,13 +257,13 @@ bool Motors::MarkLandmine(void){
 	//wait for movement to finish
 	}
 	setMotorPos(0, -2);//move can over to the right
-		while(AreMotorsMoving()){
-			//wait for movement to finish
+	while(AreMotorsMoving()){
+		//wait for movement to finish
 	}
 	setMotorPos(0, -2);//move can over to the right
-		while(AreMotorsMoving()){
-		//wait for movement to finish
-		}
+	while(AreMotorsMoving()){
+	//wait for movement to finish
+	}
 	setMotorPos(0, 2);//move can back to starting position
 	while(AreMotorsMoving()){
 	//wait for movement to finish
@@ -333,7 +333,6 @@ bool Motors::AreMotorsMoving(){//if the Move values arent zero then the motors a
 void RollMotorISR(void){
 	if(RollDirection){//rotating up left side
 		if(digitalRead(lRollButL)){//if at 30 degrees
-			analogWrite(lRollMPWM, 0);//stop motor
 			RollEncValMove=0;//cant move anymore
 			RollEncVal=0;//at home position
 		}
@@ -344,7 +343,6 @@ void RollMotorISR(void){
 	}
 	else{
 		if(digitalRead(lRollButR)){//if at -30 degrees
-			analogWrite(lRollMPWM, 0);//stop motor
 			RollEncValMove = 0; //No more ticks left to move
 			RollEncVal++;//add 1 to encoder position
 		}
@@ -362,7 +360,6 @@ void RollMotorISR(void){
 void YawMotorISR(void){
 	if(YawDirection){//rotating up front side
 		if(digitalRead(lYawButL)){//check to see if arm is at 30 degrees
-			analogWrite(lYawMPWM, 0);//if so stop motor (prevent stalling)
 			YawEncValMove=0;//can't move anymore
 			YawEncVal=0;//at home position
 		}
@@ -373,7 +370,6 @@ void YawMotorISR(void){
 	}
 	else{
 		if(digitalRead(lYawButR)){//check if the arm is at -30 degrees
-			analogWrite(lYawMPWM, 0);//if so stop motor
 			YawEncValMove = 0; //stop moving
 		}
 		else{
