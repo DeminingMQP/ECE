@@ -47,7 +47,7 @@
 void ProcessRaspPiRequest(char Mssg);
 enum RobotStatusMessages {
 	Running = 0, Stopped = 1, ZeroingMetalMD = 2, ErrorZeroMD = 3, HomingCoil = 4, ErrorHomingCoil = 5,
-		  ErrorMotorStall = 8, SuccessfulMarking = 9, CommandUnknown = 10
+		  ErrorMotorStall = 8, MarkingLandmine = 9, CommandUnknown = 10
 };
 enum IICRecieveMessage {
 	Start = 1, ZeroMetalDetector = 2, HomeOrientation = 3, MarkLandmine = 4, Stop = 5
@@ -160,6 +160,7 @@ void ProcessRaspPiRequest(char Mssg){
 				}
 				break;
 			case HomeOrientation://if requested to home encoders
+				RobotStatus = HomingCoil;
 				if(Motor.HomeAxis()==0){//home encoders
 					Run = false;
 					RobotStatus = ErrorHomingCoil;// if errors report motor stall
@@ -169,6 +170,7 @@ void ProcessRaspPiRequest(char Mssg){
 				}
 				break;
 			case MarkLandmine:
+				RobotStatus = MarkingLandmine;
 				if(Motor.MarkLandmine()==0){
 					Run = false;
 					RobotStatus = ErrorMotorStall;// if errors report motor stall
