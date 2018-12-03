@@ -22,7 +22,6 @@ NewPing REARUS(0,0,0);
 MetalDetectorOrientation::MetalDetectorOrientation(){
 	NeededChangeInRoll = 0;
 	NeededChangeInYaw = 0;
-	InitOrientation();
 	CurPosData = 0;
 	RaisePN = 0;
 	LowerPN = 0;

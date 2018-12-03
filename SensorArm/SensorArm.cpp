@@ -4,7 +4,7 @@
 #include "HelperClasses/Motors.h"
 #include "HelperClasses/RaspPiComm.h"
 
-#define Debug
+#define debug
 
 //pins need to be set!!!!!!!!!
 //Metal Detector pins
@@ -46,15 +46,13 @@
 
 void ProcessRaspPiRequest(char Mssg);
 enum RobotStatusMessages {
-	RobotRunning, RobotStopped, RobotMotorStall
+	Running = 0, Stopped = 1, ZeroingMetalMD = 2, ErrorZeroMD = 3, HomingCoil = 4, ErrorHomingCoil = 5,
+		  ErrorMotorStall = 8, SuccessfulMarking = 9, CommandUnknown = 10
 };
 enum IICRecieveMessage {
-	Stop = 0, Start = 1, ZeroMetalDetector = 2, HomeOrientation = 3, MarkLandmine = 4, Status = 5, NoMessage = 255
+	Start = 1, ZeroMetalDetector = 2, HomeOrientation = 3, MarkLandmine = 4, Stop = 5
 };
-enum IICRespondMessage{
-	Running = 0, Stopped = 1, SuccessfullyStarted = 2, SuccessfullyStopped = 3, ProcessingRequest = 4, ErrorZeroMD = 5,
-	SuccessfulZeroMD = 6, SuccessfulHomeCoil = 7, ErrorMotorStall = 8, SuccessfulMarking = 9, CommandUnknown = 10
-};
+
 
 //Create helper Objects
 MetalDetector MD;
@@ -82,21 +80,21 @@ void setup() {
 	//initialize variables
 	CurrentTime = 0;
 	NextTimeToPing = 0;
-	RobotStatus = 0;
+	RobotStatus = Stopped;
 	#ifdef debug
 	Serial.println("Testing");
 	#endif
 	//init some settings
 	Comm.CommSetUp();
 	MDOrient.InitOrientation();
-	interrupts();//enable interrupts
+	//interrupts();//enable interrupts
 }
 
 void loop() {
 	if(Run){//if robot is in run state
 
 		if(Motor.pollCurrentSensors()){//first check to see if a motor is stalled
-			RobotStatus = RobotMotorStall;//if so then the robot status is changed to the error status
+			RobotStatus = ErrorMotorStall;//if so then the robot status is changed to the error status
 			Run = false;//stops running
 		}
 		if(Motor.AreMotorsMoving()==false){//only responds to messages when motors arent moving
@@ -122,75 +120,69 @@ void loop() {
 	else{//if robot is not running
 		//waits for start
 		char message = Comm.GetMessage();//gets message
-		ProcessRaspPiRequest(message);//processes it
+		if(message!=0){
+			ProcessRaspPiRequest(message);//processes it
+		}
 	}
 
 
 }
 
 void ProcessRaspPiRequest(char Mssg){
-	Comm.SendMessage(ProcessingRequest);//lets RaspPi know it is processing the request
-	if(RobotStatus != RobotMotorStall){//if the robot motors were not stalled (meaning fuses in tact)
+	//Comm.SendMessage(ProcessingRequest);//lets RaspPi know it is processing the request
+	#ifdef debug
+	Serial.println("Processing Request");
+	#endif
+	if(RobotStatus == ErrorHomingCoil || RobotStatus == ErrorZeroMD || RobotStatus ==ErrorMotorStall){
 
+	}
+	else{
 		switch(Mssg){
 			case Stop://if told to stop
 				Run = false;//stop running (Motors will stop on their own if active)
-				RobotStatus = RobotRunning;
-				Comm.SendMessage(SuccessfullyStopped);//let RaspPi know the Arm has stopped
+				RobotStatus = Stopped;
+				#ifdef debug
+				Serial.println("Stopped Robot");
+				#endif
 				break;
 			case Start://start running
 				Run = true;
-				RobotStatus = RobotStopped;
-				Comm.SendMessage(SuccessfullyStarted);//lets RaspPi know the arm is active
+				RobotStatus = Running;
 				break;
 			case ZeroMetalDetector://if Metal Detector needs to be zeroed
-				if(MD.ZeroMetalDetector()){//Zero Detector
-					Comm.SendMessage(SuccessfulZeroMD);//if no errors report success
+				RobotStatus = HomingCoil;
+				if(MD.ZeroMetalDetector()==0){//Zero Detector
+					Run = false;
+					RobotStatus = ErrorZeroMD;
 				}
 				else{
-					Comm.SendMessage(ErrorZeroMD);//if errors report unsuccessful
+					RobotStatus = Running;
 				}
 				break;
 			case HomeOrientation://if requested to home encoders
-				if(Motor.HomeAxis()){//home encoders
-					Comm.SendMessage(SuccessfulHomeCoil);// if no errors report success
+				if(Motor.HomeAxis()==0){//home encoders
+					Run = false;
+					RobotStatus = ErrorHomingCoil;// if errors report motor stall
 				}
 				else{
-					Comm.SendMessage(ErrorMotorStall);// if errors report motor stall
+					RobotStatus = Running;
 				}
 				break;
 			case MarkLandmine:
-				if(Motor.MarkLandmine()){
-					Comm.SendMessage(SuccessfulMarking);// if no errors report success
+				if(Motor.MarkLandmine()==0){
+					Run = false;
+					RobotStatus = ErrorMotorStall;// if errors report motor stall
 				}
 				else{
-					Comm.SendMessage(ErrorMotorStall);// if errors report motor stall
+					RobotStatus = Running;
 				}
-				break;
-			case Status://if asked for robot status
-				if(RobotStatus == RobotRunning){//running
-					Comm.SendMessage(Running);
-				}
-				else if(RobotStatus == RobotMotorStall){//motor stall has occurred
-					Comm.SendMessage(ErrorMotorStall);
-				}
-				else{//robot is stopped
-					Comm.SendMessage(Stopped);
-				}
-				break;
-			case NoMessage://no message
-				#ifdef debug
-				Serial.println("No Message Received");
-				#endif
 				break;
 			default://anything else sent
 				#ifdef debug
 				Serial.println("Error: Unknown command");
 				#endif
-				Comm.SendMessage(CommandUnknown);
+				RobotStatus = CommandUnknown;
 		}
 	}
-	else{//if robot has had a motor stall respond to every request that an error has occurred
-		Comm.SendMessage(ErrorMotorStall);// if errors report motor stall
-	}
 }
+

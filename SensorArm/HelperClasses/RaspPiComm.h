@@ -12,12 +12,13 @@
 #define Buffer_Size 8
 
 void onRecieve(int numBytes);
+void onRequest();
 class RaspPiComm {
 public:
 	RaspPiComm();
 	virtual ~RaspPiComm();
 	char GetMessage(void);
-	void SendMessage(char Mssg);
+	//void SendMessage(char Mssg);
 	void CommSetUp(void);
 
 };
