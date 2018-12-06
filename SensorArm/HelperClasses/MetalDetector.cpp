@@ -97,7 +97,7 @@ void MetalDetector::CheckDetection(void){//Must be called from main loop of code
 			newDetection = false;
 		}
 	unsigned long CurTime = micros();
-	if(CurTime-startTime<timeForDetection){//if its been less than 10milliseconds
+	if(CurTime-startTime<timeForDetection){//if its been less than 20milliseconds
 		if(tempPulseCount>=pulsesForDetection){//checks to see if 5 pulses have occurred. If so Metal detected
 			MetalDetected = true;
 			lastDetection = CurTime;
@@ -106,7 +106,7 @@ void MetalDetector::CheckDetection(void){//Must be called from main loop of code
 			newDetection = true;
 		}
 	}
-	else{//if it has been over 10ms then not enough pulses occurred in the time frame so metal is not detected.
+	else{//if it has been over 20ms then not enough pulses occurred in the time frame so metal is not detected.
 		//This effectively makes the the metal detection output pin to the Raspberry Pi update roughly every 10ms.
 		MetalDetected = false;
 		PulseCount = 0;//This is technically a non-atomic read and write but this isn't an issue for the purpose of the system

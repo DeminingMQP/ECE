@@ -5,13 +5,22 @@
 #include "HelperClasses/RaspPiComm.h"
 
 #define debug
+#define MEGA//Change to UNO or MEGA Depending on which board is being programmed
 
-//pins need to be set!!!!!!!!!
+void ProcessRaspPiRequest(char Mssg);
+
+
+#ifdef UNO
+#define IICAddress 7
 //Metal Detector pins
 #define intPinMetalDetector 1
 #define outputPinMetalDetector 1
 #define thresholdPinMetalDetector 1
+MetalDetector MD;
+#endif
 
+#ifdef MEGA
+#define IICAddress 8
 //AutoOrientPins
 #define FLUS 1
 #define FRUS 1
@@ -41,10 +50,19 @@
 #define CSYaw 1
 #define CSRoll 1
 #define CSRot 1
-
 #define NextGroundReading 200000 //In microseconds
+MetalDetectorOrientation MDOrient;
+Motors Motor;
+unsigned long CurrentTime;
+unsigned long NextTimeToPing;
+#endif
 
-void ProcessRaspPiRequest(char Mssg);
+//Create helper Objects
+RaspPiComm Comm;
+
+bool Run = false;
+uint8_t RobotStatus;
+
 enum RobotStatusMessages {
 	Running = 0, Stopped = 1, ZeroingMetalMD = 2, ErrorZeroMD = 3, HomingCoil = 4, ErrorHomingCoil = 5,
 		  ErrorMotorStall = 8, MarkingLandmine = 9, CommandUnknown = 10
@@ -53,46 +71,41 @@ enum IICRecieveMessage {
 	Start = 1, ZeroMetalDetector = 2, HomeOrientation = 3, MarkLandmine = 4, Stop = 5
 };
 
-
-//Create helper Objects
-MetalDetector MD;
-MetalDetectorOrientation MDOrient;
-Motors Motor;
-RaspPiComm Comm;
-
-bool Run = false;
-unsigned long CurrentTime;
-unsigned long NextTimeToPing;
-uint8_t RobotStatus;
-
 void setup() {
 	#ifdef debug
 	Serial.begin(115200);
 	#endif
-
-	//initialize all objects
+#ifdef Uno
 	MD = MetalDetector(intPinMetalDetector, outputPinMetalDetector, thresholdPinMetalDetector);
+#endif
+#ifdef MEGA
+	//initialize all objects
 	MDOrient = MetalDetectorOrientation(FLUS, FRUS, BLUS, BRUS, REARUS, Raise, Lower);
 	Motor = Motors(YawPWM, YawD, YawEN, RollPWM, RollD, RollEN, RotPWM, RotD, RotEN, Servo, YawLBut, YawRBut,
 			RollLBut, RollRBut, ButCoilOut, ButMarkingOut, CSYaw, CSRoll, CSRot);
-	Comm = RaspPiComm();
 
 	//initialize variables
 	CurrentTime = 0;
 	NextTimeToPing = 0;
+	MDOrient.InitOrientation();
+#endif
+	//init some settings
+	Comm = RaspPiComm(IICAddress);
+	Comm.CommSetUp();
 	RobotStatus = Stopped;
 	#ifdef debug
 	Serial.println("Testing");
 	#endif
-	//init some settings
-	Comm.CommSetUp();
-	MDOrient.InitOrientation();
-	//interrupts();//enable interrupts
+	interrupts();//enable interrupts
 }
 
 void loop() {
 	if(Run){//if robot is in run state
+#ifdef UNO
+		MD.CheckDetection();//checks metal detector readings
+#endif
 
+#ifdef MEGA
 		if(Motor.pollCurrentSensors()){//first check to see if a motor is stalled
 			RobotStatus = ErrorMotorStall;//if so then the robot status is changed to the error status
 			Run = false;//stops running
@@ -101,7 +114,6 @@ void loop() {
 			char Mssg = Comm.GetMessage();//gets message
 			ProcessRaspPiRequest(Mssg);//processes message in helper function
 		}
-		MD.CheckDetection();//checks metal detector readings
 		if(Motor.AtRotationLimit()){//if the coil is at a rotation limit
 			digitalWrite(Raise, HIGH);//tell rasp Pi
 			digitalWrite(Lower, HIGH);//tell rasp Pi
@@ -115,6 +127,7 @@ void loop() {
 				NextTimeToPing = CurrentTime+NextGroundReading;//resets next ping deadline
 			}
 		}
+#endif
 
 	}
 	else{//if robot is not running
@@ -129,7 +142,6 @@ void loop() {
 }
 
 void ProcessRaspPiRequest(char Mssg){
-	//Comm.SendMessage(ProcessingRequest);//lets RaspPi know it is processing the request
 	#ifdef debug
 	Serial.println("Processing Request");
 	#endif
@@ -149,6 +161,7 @@ void ProcessRaspPiRequest(char Mssg){
 				Run = true;
 				RobotStatus = Running;
 				break;
+#ifdef UNO
 			case ZeroMetalDetector://if Metal Detector needs to be zeroed
 				RobotStatus = HomingCoil;
 				if(MD.ZeroMetalDetector()==0){//Zero Detector
@@ -159,6 +172,8 @@ void ProcessRaspPiRequest(char Mssg){
 					RobotStatus = Running;
 				}
 				break;
+#endif
+#ifdef MEGA
 			case HomeOrientation://if requested to home encoders
 				RobotStatus = HomingCoil;
 				if(Motor.HomeAxis()==0){//home encoders
@@ -179,6 +194,7 @@ void ProcessRaspPiRequest(char Mssg){
 					RobotStatus = Running;
 				}
 				break;
+#endif
 			default://anything else sent
 				#ifdef debug
 				Serial.println("Error: Unknown command");

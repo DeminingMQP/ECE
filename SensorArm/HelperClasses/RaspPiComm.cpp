@@ -13,9 +13,16 @@ volatile uint8_t BufIndex;
 volatile uint8_t NumMessages;
 volatile bool NeedToSend;
 extern uint8_t RobotStatus;
+RaspPiComm::RaspPiComm(uint8_t Address) {
+	BufIndex = 0;
+	NumMessages = 0;
+	IICAddress = Address;
+
+}
 RaspPiComm::RaspPiComm() {
 	BufIndex = 0;
 	NumMessages = 0;
+	IICAddress = 0;
 
 }
 
@@ -23,7 +30,7 @@ RaspPiComm::~RaspPiComm() {
 	// TODO Auto-generated destructor stub
 }
 void RaspPiComm::CommSetUp(void){
-	Wire.begin(8);
+	Wire.begin(IICAddress);
 	Wire.onReceive(onRecieve);
 	Wire.onRequest(onRequest);
 }
