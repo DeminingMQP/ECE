@@ -17,6 +17,8 @@ void ProcessRaspPiRequest(char Mssg);
 #define outputPinMetalDetector 1
 #define thresholdPinMetalDetector 1
 MetalDetector MD;
+unsigned long TimeForNextCheck;
+#define NextCheckForIICMessagesUno 2000
 #endif
 
 #ifdef MEGA
@@ -53,13 +55,12 @@ MetalDetector MD;
 #define NextGroundReading 200000 //In microseconds
 MetalDetectorOrientation MDOrient;
 Motors Motor;
-unsigned long CurrentTime;
 unsigned long NextTimeToPing;
 #endif
 
 //Create helper Objects
 RaspPiComm Comm;
-
+unsigned long CurrentTime;
 bool Run = false;
 uint8_t RobotStatus;
 
@@ -77,6 +78,8 @@ void setup() {
 	#endif
 #ifdef Uno
 	MD = MetalDetector(intPinMetalDetector, outputPinMetalDetector, thresholdPinMetalDetector);
+	CurrentTime = 0;
+	unsigned long TimeForNextCheck = 0;
 #endif
 #ifdef MEGA
 	//initialize all objects
@@ -103,6 +106,12 @@ void loop() {
 	if(Run){//if robot is in run state
 #ifdef UNO
 		MD.CheckDetection();//checks metal detector readings
+		CurrentTime = micros();
+		if(CurrentTime>TimeForNextcheck){
+			char Mssg = Comm.GetMessage();//gets message
+			ProcessRaspPiRequest(Mssg);//processes message in helper function
+			TimeForNextCheck = CurrentTime+ NextCheckForIICMessagesUno;
+		}
 #endif
 
 #ifdef MEGA
