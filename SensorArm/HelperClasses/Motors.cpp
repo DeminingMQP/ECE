@@ -6,6 +6,7 @@
  */
 
 #include "Motors.h"
+#include "Libraries/Servo.h"
 
 uint8_t lYawMPWM;
 uint8_t lRollMPWM;
@@ -20,6 +21,7 @@ volatile uint16_t YawEncVal;
 volatile uint16_t RollEncVal;
 volatile uint8_t YawEncValMove;
 volatile uint8_t RollEncValMove;
+Servo MarkingSystem;
 
 Motors::Motors(){
 	 lYawMPWM = 0;
@@ -96,7 +98,7 @@ Motors::Motors(uint8_t YawMPWM,
 		pinMode(lRotMD, OUTPUT);
 		pinMode(lRotMEN, INPUT);
 
-		pinMode(lServoPin, OUTPUT);
+		MarkingSystem.attach(lServoPin);
 		pinMode(lYawButL, INPUT);
 		pinMode(lYawButR, INPUT);
 		pinMode(lRollButL, INPUT);
@@ -140,10 +142,11 @@ void Motors::setMotorPos(int Yaw, int Roll){
 			YawEncValMove = tYawEncValMove;
 		}
 		//actually tell the motor to move at the end
-		digitalWrite(lYawMD, 1);// need to check that this is correct
-		analogWrite(lYawMPWM, 64);// need to test speed
+		digitalWrite(lYawMD, 0);// need to check that this is correct
+		analogWrite(lYawMPWM, 128);// need to test speed
 	}
 	else if (Yaw<0){// if the move value is negative
+		Serial.println("Negative");
 		YawDirection = 0;//set direction -  counterclockwise
 		uint16_t tYawEncValMove = Yaw*-1*EncTicksPerDegree;//calc encoder ticks to new pos
 		if(tYawEncValMove>MaxMotorMove){//limit to 13 degree angle change. Shouldnt move this far before being reset again. Also enables atomic write
@@ -153,8 +156,14 @@ void Motors::setMotorPos(int Yaw, int Roll){
 			YawEncValMove = tYawEncValMove;
 		}
 		//actually tell the motor to move at the end
-		digitalWrite(lYawMD, 0);
-		analogWrite(lYawMPWM, 64);
+		Serial.println("Moving");
+		digitalWrite(lYawMD, 1);
+		Serial.print(YawEncValMove);
+		analogWrite(lYawMPWM, 128);
+	}
+	else{
+		YawEncValMove=0;
+		analogWrite(lYawMPWM, 255);
 	}
 	//else dont set Yaw
 	if(Roll>0){//if positive rotation...
@@ -168,7 +177,7 @@ void Motors::setMotorPos(int Yaw, int Roll){
 		}
 		//actually tell the motor to move at the end
 		digitalWrite(lRollMD, 1);// need to check that this is correct
-		analogWrite(lRollMPWM, 64);// need to test speed
+		analogWrite(lRollMPWM, 128);// need to test speed
 	}
 	else if (Roll<0){// if the move value is negative
 		RollDirection = 0;//set direction - clockwise
@@ -177,8 +186,13 @@ void Motors::setMotorPos(int Yaw, int Roll){
 			RollEncValMove = MaxMotorMove;
 		}
 		//actually tell the motor to move at the end
+		Serial.print(RollEncValMove);
 		digitalWrite(lRollMD, 0);
-		analogWrite(lRollMPWM, 64);
+		analogWrite(lRollMPWM, 128);
+	}
+	else{
+		RollEncValMove=0;
+		analogWrite(lRollMPWM, 255);
 	}
 	//else dont set Roll
 }
@@ -233,18 +247,19 @@ bool Motors::HomeAxis(void){
 }
 //polls all 3 current sensors. If one is stalling, return true for failure
 bool Motors::pollCurrentSensors(void){
-	if(analogRead(RollCSPin)>MotorStallCurrent || analogRead(YawCSPin)>MotorStallCurrent||analogRead(RotCSPin)){
+	/*if(analogRead(RollCSPin)>MotorStallCurrent || analogRead(YawCSPin)>MotorStallCurrent||analogRead(RotCSPin)){
 		return true;
 	}
 	else{
 		return false;
-	}
+	}*/
+	return false;
 }
 void Motors::SprayPaint(void){
-	analogWrite(lServoPin, ServoPaintSpraying);//Move servo to spraying position
+	MarkingSystem.write(ServoPaintSpraying);
 }
 void Motors::ReleasePaint(void){
-	analogWrite(lServoPin, ServoReleasePaint);//Move Servo to released position
+	MarkingSystem.write(ServoReleasePaint);
 }
 bool Motors::MarkLandmine(void){
 	//rotate marking system out
@@ -268,6 +283,7 @@ bool Motors::MarkLandmine(void){
 	while(AreMotorsMoving()){
 	//wait for movement to finish
 	}
+
 	ReleasePaint();//stop spraying
 	if(!RotateCoil()){//rotate coil back out
 		return false;// error occurred
@@ -283,11 +299,11 @@ bool Motors::RotatePaint(void){
 	bool Moving = true;//used to break loops and determine return value
 	while(Moving){
 		if(pollCurrentSensors()){//check for motor stall
-			analogWrite(lRotMPWM, 0);//if stalled stop motor.
+			analogWrite(lRotMPWM, 255);//if stalled stop motor.
 			break;
 		}
 		if(digitalRead(lRotButMarkingOut)){//check to see if at position
-			analogWrite(lRotMPWM, 0);//if so stop motor
+			analogWrite(lRotMPWM, 255);//if so stop motor
 			Moving = false;//no longer moving
 		}
 	}
@@ -305,11 +321,11 @@ bool Motors::RotateCoil(void){
 	bool Moving = true;//used to break loops and determine return value
 	while(Moving){
 		if(pollCurrentSensors()){//check for motor stall
-			analogWrite(lRotMPWM, 0);//if stalled stop motor.
+			analogWrite(lRotMPWM, 255);//if stalled stop motor.
 			break;
 		}
 		if(digitalRead(lRotButCoilOut)){//check to see if at position
-			analogWrite(lRotMPWM, 0);//if so stop motor
+			analogWrite(lRotMPWM, 255);//if so stop motor
 			Moving = false;//no longer moving
 		}
 	}
@@ -329,6 +345,7 @@ bool Motors::AreMotorsMoving(){//if the Move values arent zero then the motors a
 		return true;
 	}
 }
+
 
 void RollMotorISR(void){
 	if(RollDirection){//rotating up left side
@@ -351,8 +368,8 @@ void RollMotorISR(void){
 			RollEncVal++;//Add one to position
 		}
 	}
-	if(RollEncVal==0){//if no more ticks left to move
-		analogWrite(lRollMPWM, 0);//stop motor
+	if(RollEncValMove==0){//if no more ticks left to move
+		analogWrite(lRollMPWM, 255);//stop motor
 	}
 
 }
@@ -379,6 +396,7 @@ void YawMotorISR(void){
 	}
 	//if no more ticks left to move stop motor
 	if(YawEncValMove==0){
-		analogWrite(lYawMPWM, 0);
+		analogWrite(lYawMPWM, 255);
+		Serial.println("Stopped");
 	}
 }

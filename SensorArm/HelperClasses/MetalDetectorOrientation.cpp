@@ -8,7 +8,7 @@
 #include "MetalDetectorOrientation.h"
 #include <Arduino.h>
 #include "Libraries/NewPing.h"
-#define MaxUSRangeCM 40
+#define MaxUSRangeCM 80
 #define DesHeightFR 10//Subject to change with testing. in CM
 #define DesHeightFL 10
 #define DesHeightBR 10
@@ -78,20 +78,16 @@ bool MetalDetectorOrientation::InitOrientation(){
 // and also tell the RaspPi if the arm needs to be raised or lowered.
 void MetalDetectorOrientation::MeasureOrientation(void){
 
-
-	if(CurPosData==NumDataPoints-1){//if the Current position in the buffer is 1 less than the size
-		CurPosData=0;//loop the index back to 0
+	int x;
+	for(x=0; x<NumDataPoints;x++){
+		//take new data samples
+		FLData[x] = FrontLeftUS.ping_cm();
+		FRData[x] = FrontRightUS.ping_cm();
+		BLData[x] = BackLeftUS.ping_cm();
+		BRData[x] = BackRightUS.ping_cm();
+		REARData[x] = REARUS.ping_cm();
 	}
-	else{
-		CurPosData++;//else increase by 1
-	}
 
-	//take new data samples
-	FLData[CurPosData] = FrontLeftUS.ping_cm();
-	FRData[CurPosData] = FrontRightUS.ping_cm();
-	BLData[CurPosData] = BackLeftUS.ping_cm();
-	BRData[CurPosData] = BackRightUS.ping_cm();
-	REARData[CurPosData] = REARUS.ping_cm();
 
 	////////////////////////Averaging Readings////////////////////
 	int CurHFL = FLData[0];
@@ -113,6 +109,12 @@ void MetalDetectorOrientation::MeasureOrientation(void){
 	CurHBL = CurHBL/NumDataPoints;
 	CurHBR = CurHBR/NumDataPoints;
 	CurHREAR = CurHREAR/NumDataPoints;
+	Serial.println("US Measurements");
+	Serial.println(CurHFL);
+	Serial.println(CurHFR);
+	Serial.println(CurHBL);
+	Serial.println(CurHBR);
+	Serial.println(CurHREAR);
 
 	//All of the following logic needs to be throughly tested. I think there may need to be a general scale factor
 	//to adjust for the ACTUALLY location of rotation for YAW!
@@ -198,6 +200,10 @@ void MetalDetectorOrientation::MeasureOrientation(void){
 	//Roll and Yaw should be within -10 and 10 and only integers so GetNeededAngle maps those values to an angle
 	NeededChangeInRoll = GetNeededAngle(rollNeeded);
 	NeededChangeInYaw = GetNeededAngle(yawNeeded);
+	Serial.println("Yaw and Roll");
+	Serial.print(NeededChangeInYaw);
+	Serial.print(" ");
+	Serial.println(NeededChangeInRoll);
 
 }
 int MetalDetectorOrientation::GetNeededAngle(int rawDist){

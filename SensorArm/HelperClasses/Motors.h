@@ -5,13 +5,15 @@
  *      Author: Nick
  */
 #include <Arduino.h>
+#include "Libraries/Servo.h"
 #ifndef MOTORS_H_
 #define MOTORS_H_
 #define MaxMotorMove 255
 #define EncTicksPerDegree 19
 #define MotorStallCurrent 500 // need to measure reading
-#define ServoPaintSpraying 90
-#define ServoReleasePaint 0
+#define ServoPaintSpraying 15
+#define ServoReleasePaint 40
+
 
 void YawMotorISR(void);
 void RollMotorISR(void);
@@ -29,6 +31,9 @@ public:
 	int CurrentRoll(void);
 	bool MarkLandmine(void);
 	bool AreMotorsMoving(void);
+	void SprayPaint(void);
+	void ReleasePaint(void);
+
 private:
 	uint8_t lYawMD;
 	uint8_t lYawMEN;
@@ -43,8 +48,6 @@ private:
 	uint8_t YawCSPin;
 	uint8_t RollCSPin;
 	uint8_t RotCSPin;
-	void SprayPaint(void);
-	void ReleasePaint(void);
 	bool RotatePaint(void);
 	bool RotateCoil(void);
 };

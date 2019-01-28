@@ -8,7 +8,7 @@
 #include "Libraries/NewPing.h"
 #ifndef METALDETECTORORIENTATION_H_
 #define METALDETECTORORIENTATION_H_
-#define NumDataPoints 3
+#define NumDataPoints 5
 
 //USFL -> Ultrasonic Sensor Front Left
 //USFR -> Ultrasonic Sensor Front Right
@@ -19,8 +19,8 @@
 
 class MetalDetectorOrientation {
 public:
-	uint8_t NeededChangeInRoll;
-	uint8_t NeededChangeInYaw;
+	int NeededChangeInRoll;
+	int NeededChangeInYaw;
 	MetalDetectorOrientation();
 	MetalDetectorOrientation(uint8_t USFL, uint8_t USFR, uint8_t USBL, uint8_t USBR, uint8_t USREAR, uint8_t RaisePin, uint8_t LowerPin);
 	virtual ~MetalDetectorOrientation();

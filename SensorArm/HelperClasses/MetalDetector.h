@@ -12,14 +12,16 @@ void MetalDetectorISR(void);
 class MetalDetector {
 public:
 	MetalDetector();
-	MetalDetector(uint8_t interruptPin, uint8_t outputPin, uint8_t thresholdPin);
+	MetalDetector(uint8_t interruptPin, uint8_t outputPin, uint8_t CS, uint8_t INC, uint8_t UD);
 		virtual ~MetalDetector();
 	bool ZeroMetalDetector();
 	void CheckDetection(void);
 private:
 	uint8_t intPin;
 	uint8_t outPin;
-	uint8_t threshPin;
+	uint8_t CSPin;
+	uint8_t INCPin;
+	uint8_t UDPin;
 	uint8_t ZeroValue; //Potentiometer is 7 bit resolution
 	unsigned long lastDetection;
 	unsigned long startTime;
