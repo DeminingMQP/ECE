@@ -16,6 +16,7 @@ public:
 		virtual ~MetalDetector();
 	bool ZeroMetalDetector();
 	void CheckDetection(void);
+	bool MetalDetected;
 private:
 	uint8_t intPin;
 	uint8_t outPin;
@@ -26,7 +27,6 @@ private:
 	unsigned long lastDetection;
 	unsigned long startTime;
 	bool newDetection;
-	bool MetalDetected;
 
 };
 

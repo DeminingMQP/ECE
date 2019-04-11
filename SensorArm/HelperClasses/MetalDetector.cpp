@@ -9,10 +9,10 @@
 #include <Arduino.h>
 #define ZeroTimeNeeded 5000000//need to not detect metal for 5 seconds to be zeroed
 #define ZeroTimeout 30000000//stop trying to zero metal detector after 30 seconds
-#define pulsesForDetection 23//# of pulses needed in the set period to be counted as metal detected
-#define timeForDetection 20000
+#define pulsesForDetection 200//# of pulses needed in the set period to be counted as metal detected
+#define timeForDetection 500000
 
-volatile uint8_t PulseCount;
+volatile unsigned long PulseCount;
 
 MetalDetector::MetalDetector(){
 	intPin = 0;
@@ -130,7 +130,8 @@ void MetalDetector::CheckDetection(void){//Must be called from main loop of code
 	if(CurTime-startTime<timeForDetection){//if its been less than 20milliseconds
 		if(tempPulseCount>=pulsesForDetection){//checks to see if 5 pulses have occurred. If so Metal detected
 			MetalDetected = true;
-
+			Serial.println("Detected");
+			Serial.println(PulseCount);
 			PulseCount = 0;//This is technically a non-atomic read and write but this isn't an issue for the purpose of the system
 			digitalWrite(outPin, HIGH);//sends info to raspberry pi over direct line
 			newDetection = true;
@@ -139,9 +140,12 @@ void MetalDetector::CheckDetection(void){//Must be called from main loop of code
 	else{//if it has been over 20ms then not enough pulses occurred in the time frame so metal is not detected.
 		//This effectively makes the the metal detection output pin to the Raspberry Pi update roughly every 10ms.
 		MetalDetected = false;
+		Serial.println("Not Detected");
+		Serial.println(PulseCount);
 		PulseCount = 0;//This is technically a non-atomic read and write but this isn't an issue for the purpose of the system
 		digitalWrite(outPin, LOW);
 		newDetection=true;
+
 	}
 
 

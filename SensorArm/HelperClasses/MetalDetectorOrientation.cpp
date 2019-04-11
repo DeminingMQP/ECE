@@ -13,6 +13,8 @@
 #define DesHeightFL 10
 #define DesHeightBR 10
 #define DesHeightBL 10
+#define DesHeightSlimFront 8
+#define DesHeightSlimRear 13
 #define DesHeightREAR 7
 NewPing FrontLeftUS(0,0,0);
 NewPing FrontRightUS(0,0,0);
@@ -42,6 +44,17 @@ MetalDetectorOrientation::MetalDetectorOrientation(uint8_t USFL, uint8_t USFR, u
 	RaisePN = RaisePin;
 	LowerPN = LowerPin;
 }
+MetalDetectorOrientation::MetalDetectorOrientation(uint8_t USFL, uint8_t USFR, uint8_t USREAR, uint8_t RaisePin, uint8_t LowerPin) {
+	//create ultrasonic objects
+	FrontLeftUS = NewPing(USFL, USFL, MaxUSRangeCM);
+	FrontRightUS = NewPing(USFR, USFR, MaxUSRangeCM);
+	REARUS = NewPing(USREAR, USREAR, MaxUSRangeCM);
+
+	//initialize variables
+	InitOrientationSlim();
+	RaisePN = RaisePin;
+	LowerPN = LowerPin;
+}
 
 MetalDetectorOrientation::~MetalDetectorOrientation() {
 	// TODO Auto-generated destructor stub
@@ -68,6 +81,29 @@ bool MetalDetectorOrientation::InitOrientation(){
 	//If any of these values are 0 there may be a loose cable or broken sensor
 	for(i=0;i<NumDataPoints;i++){
 		if((FLData[i]==0)||(FRData[i]==0)||(BLData[i]==0)||(BRData[i]==0)||(REARData[i]==0)){
+			return false;
+		}
+	}
+	return true;
+}
+bool MetalDetectorOrientation::InitOrientationSlim(){
+	//Set Raise/Lower pins to low so the arm doesnt move
+	pinMode(RaisePN, OUTPUT);
+	digitalWrite(RaisePN, LOW);
+	pinMode(LowerPN, OUTPUT);
+	digitalWrite(LowerPN, LOW);
+
+
+	//fill Distance Buffers at startup
+	int i;
+	for(i=0; i<NumDataPoints;i++){
+		FLData[i] = FrontLeftUS.ping_cm();
+		FRData[i] = FrontRightUS.ping_cm();
+		REARData[i]= REARUS.ping_cm();
+	}
+	//If any of these values are 0 there may be a loose cable or broken sensor
+	for(i=0;i<NumDataPoints;i++){
+		if((FLData[i]==0)||(FRData[i]==0)||(REARData[i]==0)){
 			return false;
 		}
 	}
@@ -206,80 +242,142 @@ void MetalDetectorOrientation::MeasureOrientation(void){
 	Serial.println(NeededChangeInRoll);
 
 }
+void MetalDetectorOrientation::MeasureOrientationSlim(void){
+
+//#define DesHeightSlimFront 10
+//#define DesHeightSlimRear 9
+	int x;
+	for(x=0; x<NumDataPoints;x++){
+		//take new data samples
+		FLData[x] = FrontLeftUS.ping_cm();
+		FRData[x] = FrontRightUS.ping_cm();
+		REARData[x] = REARUS.ping_cm();
+
+	}
+
+
+	////////////////////////Averaging Readings////////////////////
+	int CurHFL = FLData[0];
+	int CurHFR = FRData[0];
+	int CurHREAR = REARData[0];
+	int i;
+	for(i=1; i<NumDataPoints; i++){//add all readings together
+		CurHFL+=FLData[i];
+		CurHFR+=FRData[i];
+		CurHREAR+=REARData[i];
+	}
+	//divide by total readings in buffer
+	CurHFL = CurHFL/NumDataPoints;
+	CurHFR = CurHFR/NumDataPoints;
+	CurHREAR = CurHREAR/NumDataPoints;
+	Serial.println("US Measurements");
+	Serial.println(CurHFL);
+	Serial.println(CurHFR);
+	Serial.println(CurHREAR);
+
+	//This is where it determines if the 4 bar should be raised or lowered.
+	if(CurHFL<DesHeightSlimFront){
+		digitalWrite(RaisePN, HIGH);
+		digitalWrite(LowerPN, LOW);
+		Serial.println("Raise");
+	}
+	else if(CurHFR<DesHeightSlimFront){
+		digitalWrite(RaisePN, HIGH);
+		digitalWrite(LowerPN, LOW);
+		Serial.println("Raise");
+	}
+	else if(CurHREAR<DesHeightSlimRear){
+			digitalWrite(RaisePN, HIGH);
+			digitalWrite(LowerPN, LOW);
+			Serial.println("Raise");
+		}
+	else if(CurHFL>DesHeightSlimFront&&CurHFR>DesHeightSlimFront&&CurHREAR>DesHeightSlimRear){
+		digitalWrite(RaisePN, LOW);
+		digitalWrite(LowerPN, HIGH);
+		Serial.println("Lower");
+	}
+	else{
+		digitalWrite(RaisePN, LOW);
+		digitalWrite(LowerPN, LOW);
+		Serial.println("Stop");
+	}
+
+
+}
 int MetalDetectorOrientation::GetNeededAngle(int rawDist){
 	//Maps rawDist to an angle. These are numbers calculated by looking at the model.
 	rawDist +=10;
 	int val;
 	switch(rawDist){
 		case 0:
-			val = -30;
+			val = 30;
 			break;
 		case 1:
-			val = -28;
+			val = 28;
 			break;
 		case 2:
-			val = -26;
+			val = 26;
 			break;
 		case 3:
-			val = -24;
+			val = 24;
 			break;
 		case 4:
-			val = -21;
+			val = 21;
 			break;
 		case 5:
-			val = -18;
+			val = 18;
 			break;
 		case 6:
-			val = -15;
+			val = 15;
 			break;
 		case 7:
-			val = -12;
+			val = 12;
 			break;
 		case 8:
-			val = -8;
+			val = 8;
 			break;
 		case 9:
-			val = -4;
+			val = 4;
 			break;
 		case 10:
 			val = 0;
 			break;
 		case 11:
-			val = 4;
+			val = -4;
 			break;
 		case 12:
-			val = 8;
+			val = -8;
 			break;
 		case 13:
-			val = 12;
+			val = -12;
 			break;
 		case 14:
-			val = 15;
+			val = -15;
 			break;
 		case 15:
-			val = 18;
+			val = -18;
 			break;
 		case 16:
-			val = 21;
+			val = -21;
 			break;
 		case 17:
-			val = 24;
+			val = -24;
 			break;
 		case 18:
-			val = 26;
+			val = -26;
 			break;
 		case 19:
-			val = 28;
+			val = -28;
 			break;
 		case 20:
-			val = 30;
+			val = -30;
 			break;
 		default:
 			if(rawDist>20){
-				val = 30;
+				val = -30;
 			}
 			else if(rawDist<0){
-				val = -30;
+				val = 30;
 			}
 	}
 	return val;
